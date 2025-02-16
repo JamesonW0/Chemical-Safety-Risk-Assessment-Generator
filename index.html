@@ -165,7 +165,7 @@
         currentResults.forEach(item => {
           const button = document.createElement("button");
           button.classList.add("btn", "btn-outline-success", "m-1");
-          button.innerText = `CID: ${item.cid}, Name: ${item.name}`;
+          button.innerText = `Name: ${item.name}`;
           button.onclick = () => toggleSelection(button, item.cid, chemical);
           resultsDiv.appendChild(button);
         });
@@ -184,7 +184,7 @@
                     const synonym = Array.isArray(synonyms) && synonyms.length > 0 ? synonyms[0] : "N/A";
                     const button = document.createElement("button");
                     button.classList.add("btn", "btn-outline-success", "m-1");
-                    button.innerText = `CID: ${cid}, Formula: ${molecularFormula}, Synonym: ${synonym}`;
+                    button.innerText = `Name: ${synonym}, Formula: ${molecularFormula}`;
                     button.onclick = () => toggleSelection(button, cid, chemical);
                     resultsDiv.appendChild(button);
                   })
