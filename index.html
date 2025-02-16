@@ -1,137 +1,260 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chemical Safety Data Extractor</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <style>
-        .selected { background-color: #d4edda !important; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chemical Safety Data Extractor</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <style>
+    .selected { background-color: #d4edda !important; }
+  </style>
 </head>
 <body class="container mt-5">
-    <h2 class="mb-4">Chemical Safety Data Extractor</h2>
-    <div class="mb-3">
-        <label for="chemicalsInput" class="form-label">Enter Chemical Names (comma-separated):</label>
-        <input type="text" id="chemicalsInput" class="form-control" placeholder="e.g., ethanol, benzene, acetone">
-    </div>
-    <button class="btn btn-primary" onclick="searchChemicals()">Search</button>
-    
-    <div class="mt-4" id="resultsContainer"></div>
-    <button class="btn btn-success mt-3" onclick="submitSelection()">Submit Selected</button>
-    
-    <script>
-        let selectedCIDs = new Set();
+  <h2 class="mb-4">Chemical Safety Data Extractor</h2>
+  <div class="mb-3">
+    <label for="chemicalsInput" class="form-label">Enter Chemical Names (comma-separated):</label>
+    <input type="text" id="chemicalsInput" class="form-control" placeholder="e.g., ethanol, benzene, acetone" />
+  </div>
+  <button class="btn btn-primary" onclick="searchChemicals()">Search</button>
 
-        function fetchWithUA(url) {
-            return fetch(url, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-                }
-            }).then(response => response.json());
+  <div class="mt-4" id="resultsContainer"></div>
+  <button class="btn btn-success mt-3" onclick="submitSelection()">Submit Selected</button>
+
+  <script>
+    // Global variables to track selections and search results.
+    let selectedCIDs = new Set();
+    let chemicalMap = {};
+    // For each chemical we store its latest search results, search type, and current page.
+    let searchResultsData = {};
+
+    function fetchWithUA(url) {
+      return fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
+      }).then(response => response.json());
+    }
 
-        function searchChemicals() {
-            const input = document.getElementById("chemicalsInput").value;
-            const chemicals = input.split(',').map(c => c.trim()).filter(c => c);
-            document.getElementById("resultsContainer").innerHTML = "";
-            selectedCIDs.clear();
-            
-            if (chemicals.length === 0) {
-                alert("Please enter at least one chemical name.");
-                return;
-            }
-            
-            chemicals.forEach(chemical => {
-                fetchWithUA(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${chemical}/cids/JSON`)
-                    .then(data => {
-                        if (data.IdentifierList && data.IdentifierList.CID) {
-                            displayResults(chemical, data.IdentifierList.CID);
-                        } else {
-                            fetchWithUA(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${chemical}/cids/JSON?name_type=word`)
-                                .then(data => {
-                                    if (data.IdentifierList && data.IdentifierList.CID) {
-                                        displayResults(chemical, data.IdentifierList.CID);
-                                    } else {
-                                        displayResults(chemical, []);
-                                    }
-                                })
-                                .catch(error => console.error("Error fetching alternative data:", error));
-                        }
-                    })
-                    .catch(error => console.error("Error fetching data:", error));
-            });
-        }
-        
-        function displayResults(chemical, cids) {
-            const container = document.getElementById("resultsContainer");
-            const section = document.createElement("div");
-            section.classList.add("mt-3");
-            section.innerHTML = `<h5>${chemical}</h5>`;
-            
-            if (cids.length === 0) {
-                section.innerHTML += `<p class="text-danger">No results found.</p>`;
-            } else {
-                cids.forEach(cid => {
-                    fetchWithUA(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/MolecularFormula/JSON`)
-                        .then(data => {
-                            if (data.PropertyTable && data.PropertyTable.Properties.length > 0) {
-                                const properties = data.PropertyTable.Properties[0];
-                                const molecularFormula = properties.MolecularFormula || "N/A";
-                                
-                                fetchWithUA(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/synonyms/JSON`)
-                                    .then(synData => {
-                                        const synonyms = synData.InformationList?.Information[0]?.Synonym || [];
-                                        const synonym = Array.isArray(synonyms) && synonyms.length > 0 ? synonyms[0] : "N/A";
-                                        
-                                        const button = document.createElement("button");
-                                        button.classList.add("btn", "btn-outline-success", "m-1");
-                                        button.innerText = `CID: ${cid}, Formula: ${molecularFormula}, Synonym: ${synonym}`;
-                                        button.onclick = () => toggleSelection(button, cid);
-                                        section.appendChild(button);
-                                    })
-                                    .catch(error => {
-                                        console.error("Error fetching synonyms:", error);
-                                        const button = document.createElement("button");
-                                        button.classList.add("btn", "btn-outline-success", "m-1");
-                                        button.innerText = `CID: ${cid}, Formula: ${molecularFormula}, Synonym: N/A`;
-                                        button.onclick = () => toggleSelection(button, cid);
-                                        section.appendChild(button);
-                                    });
-                            }
-                        })
-                        .catch(error => console.error("Error fetching properties:", error));
-                });
-            }
-            
-            container.appendChild(section);
-        }
+    // Called when the user clicks the Search button.
+    function searchChemicals() {
+      const input = document.getElementById("chemicalsInput").value;
+      const chemicals = input.split(',').map(c => c.trim()).filter(c => c);
+      document.getElementById("resultsContainer").innerHTML = "";
+      selectedCIDs.clear();
+      chemicalMap = {};
+      searchResultsData = {};
 
-        function toggleSelection(button, cid) {
-            if (selectedCIDs.has(cid)) {
-                selectedCIDs.delete(cid);
-                button.classList.remove("selected");
-            } else {
-                selectedCIDs.add(cid);
-                button.classList.add("selected");
-            }
-        }
+      if (chemicals.length === 0) {
+        alert("Please enter at least one chemical name.");
+        return;
+      }
 
-        function submitSelection() {
-            if (selectedCIDs.size === 0) {
-                alert("Please select at least one CID before submitting.");
-                return;
-            }
+      chemicals.forEach(chemical => {
+        // Create a container section for this chemical.
+        const container = document.createElement("div");
+        // Header with chemical name.
+        const header = document.createElement("h5");
+        header.innerText = chemical;
+        container.appendChild(header);
+        // Dropdown for search type.
+        const dropdown = document.createElement("select");
+        dropdown.classList.add("form-select", "mb-2");
+        dropdown.innerHTML = `
+          <option value="exact" selected>Exact Match</option>
+          <option value="partial">Partial Match</option>
+          <option value="general">General Search</option>
+        `;
+        dropdown.onchange = function() {
+          const matchType = this.value;
+          performSearch(chemical, matchType, 1, container);
+        };
+        container.appendChild(dropdown);
+        // Div to hold the search results.
+        const resultsDiv = document.createElement("div");
+        resultsDiv.classList.add("results");
+        container.appendChild(resultsDiv);
+        // Div for pagination controls.
+        const paginationDiv = document.createElement("div");
+        paginationDiv.classList.add("pagination", "mt-2");
+        container.appendChild(paginationDiv);
 
-            fetch('/process_cid', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cids: Array.from(selectedCIDs) })
+        document.getElementById("resultsContainer").appendChild(container);
+
+        // Initial search is an Exact Match.
+        performSearch(chemical, "exact", 1, container);
+      });
+    }
+
+    // Perform a search for a chemical using the selected match type and page number.
+    function performSearch(chemical, matchType, page, container) {
+      const resultsDiv = container.querySelector(".results");
+      const paginationDiv = container.querySelector(".pagination");
+      // Clear previous results and pagination.
+      resultsDiv.innerHTML = "";
+      paginationDiv.innerHTML = "";
+
+      let url;
+      if (matchType === "exact") {
+        url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(chemical)}/cids/JSON`;
+      } else if (matchType === "partial") {
+        url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(chemical)}/cids/JSON?name_type=word`;
+      } else if (matchType === "general") {
+        // Instead of fetching directly (which causes CORS issues), call our serverless endpoint.
+        url = `/api/generalSearch?chemical=${encodeURIComponent(chemical)}`;
+      }
+
+      if (matchType === "general") {
+        // For general search, fetch from our own API endpoint.
+        fetch(url)
+          .then(response => response.json())
+          .then(data => {
+            const results = data.results || [];
+            // Store results for this chemical.
+            searchResultsData[chemical] = { results, matchType, currentPage: page };
+            renderSearchResults(chemical, container);
+          })
+          .catch(error => {
+            console.error("Error in general search:", error);
+            resultsDiv.innerHTML = `<p class="text-danger">Error fetching general search results.</p>`;
+          });
+      } else {
+        // For exact and partial searches, get the JSON data.
+        fetchWithUA(url)
+          .then(data => {
+            let cids = [];
+            if (data.IdentifierList && data.IdentifierList.CID) {
+              cids = data.IdentifierList.CID;
+            }
+            // Store the array of CIDs.
+            searchResultsData[chemical] = { results: cids, matchType, currentPage: page };
+            renderSearchResults(chemical, container);
+          })
+          .catch(error => {
+            console.error("Error fetching data:", error);
+            resultsDiv.innerHTML = `<p class="text-danger">Error fetching search results.</p>`;
+          });
+      }
+    }
+
+    // Render up to 6 search results per page and add pagination controls if needed.
+    function renderSearchResults(chemical, container) {
+      const resultsDiv = container.querySelector(".results");
+      const paginationDiv = container.querySelector(".pagination");
+      const data = searchResultsData[chemical];
+      if (!data) return;
+      const { results, matchType, currentPage } = data;
+
+      const resultsPerPage = 6;
+      const totalResults = results.length;
+      const totalPages = Math.ceil(totalResults / resultsPerPage);
+      const page = currentPage > totalPages ? totalPages : currentPage;
+      data.currentPage = page;
+
+      // Determine the slice of results for this page.
+      const startIndex = (page - 1) * resultsPerPage;
+      const endIndex = Math.min(startIndex + resultsPerPage, totalResults);
+      const currentResults = results.slice(startIndex, endIndex);
+
+      if (totalResults === 0) {
+        resultsDiv.innerHTML = `<p class="text-danger">No results found.</p>`;
+        return;
+      }
+
+      if (matchType === "general") {
+        // For general search, each result is an object { cid, name }.
+        currentResults.forEach(item => {
+          const button = document.createElement("button");
+          button.classList.add("btn", "btn-outline-success", "m-1");
+          button.innerText = `CID: ${item.cid}, Name: ${item.name}`;
+          button.onclick = () => toggleSelection(button, item.cid, chemical);
+          resultsDiv.appendChild(button);
+        });
+      } else {
+        // For exact and partial searches, each result is a CID.
+        currentResults.forEach(cid => {
+          // Fetch additional properties for each CID.
+          fetchWithUA(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/MolecularFormula/JSON`)
+            .then(data => {
+              if (data.PropertyTable && data.PropertyTable.Properties.length > 0) {
+                const properties = data.PropertyTable.Properties[0];
+                const molecularFormula = properties.MolecularFormula || "N/A";
+                fetchWithUA(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/synonyms/JSON`)
+                  .then(synData => {
+                    const synonyms = synData.InformationList?.Information[0]?.Synonym || [];
+                    const synonym = Array.isArray(synonyms) && synonyms.length > 0 ? synonyms[0] : "N/A";
+                    const button = document.createElement("button");
+                    button.classList.add("btn", "btn-outline-success", "m-1");
+                    button.innerText = `CID: ${cid}, Formula: ${molecularFormula}, Synonym: ${synonym}`;
+                    button.onclick = () => toggleSelection(button, cid, chemical);
+                    resultsDiv.appendChild(button);
+                  })
+                  .catch(error => console.error("Error fetching synonyms:", error));
+              }
             })
-            .then(response => response.json())
-            .then(data => alert("Processing started for selected CIDs."))
-            .catch(error => console.error("Error sending CIDs:", error));
-        }
-    </script>
+            .catch(error => console.error("Error fetching properties:", error));
+        });
+      }
+
+      // If more than 6 results, add pagination controls.
+      if (totalPages > 1) {
+        // Previous button.
+        const prevButton = document.createElement("button");
+        prevButton.classList.add("btn", "btn-secondary", "m-1");
+        prevButton.innerText = "Previous";
+        prevButton.disabled = (page === 1);
+        prevButton.onclick = () => {
+          searchResultsData[chemical].currentPage = page - 1;
+          resultsDiv.innerHTML = "";
+          paginationDiv.innerHTML = "";
+          renderSearchResults(chemical, container);
+        };
+        paginationDiv.appendChild(prevButton);
+
+        // Page indicator.
+        const pageIndicator = document.createElement("span");
+        pageIndicator.innerText = ` Page ${page} of ${totalPages} `;
+        paginationDiv.appendChild(pageIndicator);
+
+        // Next button.
+        const nextButton = document.createElement("button");
+        nextButton.classList.add("btn", "btn-secondary", "m-1");
+        nextButton.innerText = "Next";
+        nextButton.disabled = (page === totalPages);
+        nextButton.onclick = () => {
+          searchResultsData[chemical].currentPage = page + 1;
+          resultsDiv.innerHTML = "";
+          paginationDiv.innerHTML = "";
+          renderSearchResults(chemical, container);
+        };
+        paginationDiv.appendChild(nextButton);
+      }
+    }
+
+    // Toggle selection on a result button.
+    function toggleSelection(button, cid, chemical) {
+      if (selectedCIDs.has(cid)) {
+        selectedCIDs.delete(cid);
+        button.classList.remove("selected");
+        delete chemicalMap[cid];
+      } else {
+        selectedCIDs.add(cid);
+        button.classList.add("selected");
+        chemicalMap[cid] = chemical;
+      }
+    }
+
+    // Submit the selected CIDs.
+    function submitSelection() {
+      if (selectedCIDs.size === 0) {
+        alert("Please select at least one CID before submitting.");
+        return;
+      }
+
+      const cidsArray = Array.from(selectedCIDs);
+      const mappedData = cidsArray.map(cid => ({ cid, name: chemicalMap[cid] }));
+      const queryString = encodeURIComponent(JSON.stringify(mappedData));
+      window.location.href = `table.html?data=${queryString}`;
+    }
+  </script>
 </body>
 </html>
