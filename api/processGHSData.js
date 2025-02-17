@@ -13,6 +13,9 @@ app.use(express.json());
 const FORM_TEMPLATE_PATH = path.join(__dirname, "", "COSHH_Form_Template.docx");
 const TICKS_TEMPLATE_PATH = path.join(__dirname, "", "COSHH_Ticks_Template.docx");
 
+docx4js.load(FORM_TEMPLATE_PATH)
+
+
 // Helper: Load a DOCX document from a Buffer using docx4js.
 async function loadDocument(buffer) {
   // docx4js.load returns a promise that resolves to a document object.
