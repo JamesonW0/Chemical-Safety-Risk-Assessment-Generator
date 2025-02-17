@@ -127,14 +127,8 @@ def submit_ghs_data():
         # Prepare a new COSHH form.
         doc = prepare_new_form()
 
-        # Process the first chemical using change_COSHH_row_one.
-        first = data[0]
-        hazard_str = "\n".join(first.get("hazards", []))
-        exp_routes, ctrl_measures = get_routes_and_measures(hazard_str)
-        doc = change_COSHH_row_one(doc, first.get("name", ""), first.get("amount", ""), hazard_str)
-
         # Process additional chemicals by adding rows.
-        for chem in data[1:]:
+        for chem in data:
             hazard_str = "\n".join(chem.get("hazards", []))
             exp_routes, ctrl_measures = get_routes_and_measures(hazard_str)
             doc = add_COSHH_row(doc, chem.get("name", ""), chem.get("amount", ""), hazard_str, exp_routes, ctrl_measures)
