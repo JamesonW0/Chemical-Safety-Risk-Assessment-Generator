@@ -1,6 +1,7 @@
 // /api/processGHSData.js
 
 const express = require("express");
+const path = require('path');
 const fs = require("fs");
 const { Document, Packer } = require("docx"); 
 // Note: The "docx" library here is assumed to be extended (or replaced) by helper functions 
@@ -11,8 +12,8 @@ const app = express();
 app.use(express.json());
 
 // Define file paths (adjust as needed)
-const FORM_TEMPLATE_PATH = "/api/COSHH_Form_Template.docx";
-const TICKS_TEMPLATE_PATH = "/api/COSHH_Ticks_Template.docx";
+const FORM_TEMPLATE_PATH = path.joing(__dirname, 'api', 'COSHH_Form_Template.docx');
+const TICKS_TEMPLATE_PATH = path.joing(__dirname, 'api', "COSHH_Ticks_Template.docx");
 
 // Preload template files into memory (for efficiency)
 const formTemplateBuffer = fs.readFileSync(FORM_TEMPLATE_PATH);
