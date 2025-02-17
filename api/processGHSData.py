@@ -134,6 +134,7 @@ def submit_ghs_data():
             doc = add_COSHH_row(doc, chem.get("name", ""), chem.get("amount", ""), hazard_str, exp_routes, ctrl_measures)
 
         # Save the document to an in-memory stream.
+        doc.tables[2]._tbl.remove(doc.tables[2].rows[1]._tr)
         file_stream = io.BytesIO()
         doc.save(file_stream)
         file_stream.seek(0)
