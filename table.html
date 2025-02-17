@@ -88,7 +88,25 @@
                 selectedData.push({ name, amount, hazards: selectedHazards });
             });
             console.log("Selected Data:", selectedData);
-            // Redirect or process selectedData as needed
+            
+            // Send the selectedData to the Python backend using a POST request.
+            // Adjust the endpoint URL as needed.
+            fetch('/api/processGHSData', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(selectedData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Response from backend:", data);
+                alert("Data submitted successfully!");
+            })
+            .catch(error => {
+                console.error("Error submitting data:", error);
+                alert("Error submitting data.");
+            });
         }
         
         window.onload = loadGHSData;
