@@ -13,14 +13,10 @@ app.use(express.json());
 const FORM_TEMPLATE_PATH = path.join(__dirname, "", "COSHH_Form_Template.docx");
 const TICKS_TEMPLATE_PATH = path.join(__dirname, "", "COSHH_Ticks_Template.docx");
 
-// Preload template files into memory (synchronously for simplicity)
-const formTemplateBuffer = fs.readFileSync(FORM_TEMPLATE_PATH);
-const ticksTemplateBuffer = fs.readFileSync(TICKS_TEMPLATE_PATH);
-
 // Helper: Load a DOCX document from a Buffer using docx4js.
 async function loadDocument(buffer) {
   // docx4js.load returns a promise that resolves to a document object.
-  return await docx4js.docx4js.load(buffer);
+  return await docx4js.load(buffer);
 }
 
 // ----------------- MAPPINGS -----------------
@@ -45,7 +41,7 @@ const exposureMappings = {
 // Computes exposure routes and control measures from a newline‑separated string of hazard codes.
 function getRoutesAndMeasures(hazardStatements) {
   if (!hazardStatements || hazardStatements[0] === "N") {
-    return { expRoutes: [0, 0, 0, 0], ctrlMeasures: [0, 0, 0, 0, 0, 0, 0, 0, 0] };
+    return { expRoutes: [0, 0, 0, 0], ctrlMeasures: [0, 0, 1, 0, 0, 0, 0, 0, 0] };
   }
   const lines = hazardStatements.split("\n");
   const hazardCodes = new Set();
@@ -87,8 +83,10 @@ function getRoutesAndMeasures(hazardStatements) {
 
 // ----------------- DOCX MANIPULATION FUNCTIONS -----------------
 
-// Prepare a new COSHH form by loading the form template and updating the date.
+// Prepare a new COSHH form by loading the form template from hard drive and updating the date.
 async function prepareNewForm() {
+  // Load the form template directly from disk
+  const formTemplateBuffer = fs.readFileSync(FORM_TEMPLATE_PATH);
   const doc = await loadDocument(formTemplateBuffer);
   // Assuming the template has at least one table and the desired cell is accessible:
   const dateCell = doc.tables[0].rows[1].cells[3];
@@ -129,7 +127,8 @@ function cloneElement(element) {
 
 // Add a new row to the COSHH table with tick marks for exposure routes and control measures.
 async function addCOSHHRow(doc, chemName, amount, hazardStatements, expRoutes, ctrlMeasures) {
-  // Load a fresh ticks document each time.
+  // Load a fresh ticks document from disk each time.
+  const ticksTemplateBuffer = fs.readFileSync(TICKS_TEMPLATE_PATH);
   const tickDoc = await loadDocument(ticksTemplateBuffer);
   const table = doc.tables[2];
   // Clone the template row (row index 1) as our base.
