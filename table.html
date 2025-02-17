@@ -101,11 +101,11 @@
             .then(response => response.json())
             .then(data => {
                 console.log("Response from backend:", data);
-                alert("Data submitted successfully!");
+                alert("Data submitted successfully!", data);
             })
             .catch(error => {
                 console.error("Error submitting data:", error);
-                alert("Error submitting data.");
+                alert("Error submitting data.", error);
             });
         }
         
