@@ -2,7 +2,6 @@
 
 const express = require("express");
 const fs = require("fs");
-const path = require("path");
 const { Document, Packer } = require("docx"); 
 // Note: The "docx" library here is assumed to be extended (or replaced) by helper functions 
 // that allow loading an existing DOCX from a Buffer and modifying its tables similar to python‑docx.
