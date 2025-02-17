@@ -20,7 +20,7 @@ const ticksTemplateBuffer = fs.readFileSync(TICKS_TEMPLATE_PATH);
 // Helper: Load a DOCX document from a Buffer using docx4js.
 async function loadDocument(buffer) {
   // docx4js.load returns a promise that resolves to a document object.
-  return await docx4js.load(buffer);
+  return await docx4js.docx4js.load(buffer);
 }
 
 // ----------------- MAPPINGS -----------------
