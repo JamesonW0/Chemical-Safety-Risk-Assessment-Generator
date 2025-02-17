@@ -11,9 +11,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ----- Efficiency improvements: preload template files into memory -----
-# Adjust these paths as needed. In production, you might use environment variables.
-FORM_TEMPLATE_PATH = os.environ.get("FORM_TEMPLATE_PATH", "COSHH_Form_Template.docx")
-TICKS_TEMPLATE_PATH = os.environ.get("TICKS_TEMPLATE_PATH", "COSHH_Ticks_Template.docx")
+FORM_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "COSHH_Form_Template.docx")
+TICKS_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "COSHH_Ticks_Template.docx")
 
 def load_form_template():
     return docx.Document(FORM_TEMPLATE_PATH)
