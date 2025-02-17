@@ -33,6 +33,9 @@
       }
       
       function getGHSData(cid) {
+          if (cid === '-1') {
+              return Promise.resolve(["Not Classified - Treat as Toxic"]);
+          }
           const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/${cid}/JSON`;
           return fetchWithUA(url).then(data => {
               let hazardStatements = [];

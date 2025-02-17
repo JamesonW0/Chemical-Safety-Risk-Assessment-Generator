@@ -245,13 +245,29 @@
 
     // Submit the selected CIDs.
     function submitSelection() {
-      if (selectedCIDs.size === 0) {
-        alert("Please select at least one CID before submitting.");
+      const input = document.getElementById("chemicalsInput").value;
+      const chemicals = input.split(',').map(c => c.trim()).filter(c => c);
+      
+      if (chemicals.length === 0) {
+        alert("Please enter at least one chemical name.");
         return;
       }
 
-      const cidsArray = Array.from(selectedCIDs);
-      const mappedData = cidsArray.map(cid => ({ cid, name: chemicalMap[cid] }));
+      const mappedData = chemicals.map(chemical => {
+        // Find all selected CIDs for this chemical
+        const selectedForChemical = Object.entries(chemicalMap)
+          .filter(([cid, name]) => name === chemical)
+          .map(([cid]) => cid);
+
+        // If no CID was selected, assign -1
+        if (selectedForChemical.length === 0) {
+          return { cid: '-1', name: chemical };
+        }
+
+        // Otherwise, include the selected CIDs
+        return selectedForChemical.map(cid => ({ cid, name: chemical }));
+      }).flat(); // Flatten in case of multiple selected CIDs per chemical
+
       const queryString = encodeURIComponent(JSON.stringify(mappedData));
       window.location.href = `table.html?data=${queryString}`;
     }
