@@ -12,8 +12,8 @@ const app = express();
 app.use(express.json());
 
 // Define file paths (adjust as needed)
-const FORM_TEMPLATE_PATH = path.joing(__dirname, 'api', 'COSHH_Form_Template.docx');
-const TICKS_TEMPLATE_PATH = path.joing(__dirname, 'api', "COSHH_Ticks_Template.docx");
+const FORM_TEMPLATE_PATH = path.join(__dirname, 'api', 'COSHH_Form_Template.docx');
+const TICKS_TEMPLATE_PATH = path.join(__dirname, 'api', "COSHH_Ticks_Template.docx");
 
 // Preload template files into memory (for efficiency)
 const formTemplateBuffer = fs.readFileSync(FORM_TEMPLATE_PATH);
