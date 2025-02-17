@@ -10,15 +10,15 @@
   </style>
 </head>
 <body class="container mt-5">
-  <h2 class="mb-4">Chemical Safety Data Extractor</h2>
+  <h2 class="mb-4">Chemical Safety Risk Assessment</h2>
   <div class="mb-3">
-    <label for="chemicalsInput" class="form-label">Enter Chemical Names (comma-separated):</label>
-    <input type="text" id="chemicalsInput" class="form-control" placeholder="e.g., ethanol, benzene, acetone" />
+    <label for="chemicalsInput" class="form-label">Enter Chemical Names (use comma to separate them):</label>
+    <input type="text" id="chemicalsInput" class="form-control" placeholder="e.g. benzene, HCl, Na" />
   </div>
   <button class="btn btn-primary" onclick="searchChemicals()">Search</button>
 
   <div class="mt-4" id="resultsContainer"></div>
-  <button class="btn btn-success mt-3" onclick="submitSelection()">Submit Selected</button>
+  <button class="btn btn-success mt-3" onclick="submitSelection()">Submit</button>
 
   <script>
     // Global variables to track selections and search results.
