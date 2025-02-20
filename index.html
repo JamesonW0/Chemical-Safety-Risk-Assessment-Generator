@@ -95,9 +95,9 @@
 
       let url;
       if (matchType === "exact") {
-        url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(chemical)}/cids/JSON`;
+        url = `/api/exactSearch?chemical=${encodeURIComponent(chemical)}`;
       } else if (matchType === "partial") {
-        url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(chemical)}/cids/JSON?name_type=word`;
+        url = `/api/partialSearch?chemical=${encodeURIComponent(chemical)}`;
       } else if (matchType === "general") {
         // Instead of fetching directly (which causes CORS issues), call our serverless endpoint.
         url = `/api/generalSearch?chemical=${encodeURIComponent(chemical)}`;
@@ -119,7 +119,7 @@
           });
       } else {
         // For exact and partial searches, get the JSON data.
-        fetchWithUA(url)
+        fetch(url)
           .then(data => {
             let cids = [];
             if (data.IdentifierList && data.IdentifierList.CID) {
