@@ -7,9 +7,28 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
   <style>
     .selected { background-color: #d4edda !important; }
+    /* Position the how-to-use button on the top right */
+    .how-to-use-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1050;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      font-size: 20px;
+      line-height: 40px;
+      text-align: center;
+    }
   </style>
 </head>
 <body class="container mt-5">
+  <!-- How to Use Button -->
+  <button type="button" class="btn btn-info how-to-use-btn">
+    ?
+  </button>
+
   <h2 class="mb-4">Chemical Safety Risk Assessment</h2>
   <div class="mb-3">
     <label for="chemicalsInput" class="form-label">Enter Chemical Names (use comma to separate them):</label>
@@ -19,6 +38,31 @@
 
   <div class="mt-4" id="resultsContainer"></div>
   <button class="btn btn-success mt-3" onclick="submitSelection()">Submit</button>
+
+  <!-- How to Use Modal -->
+  <div class="modal fade" id="howToUseModal" tabindex="-1" aria-labelledby="howToUseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="howToUseModalLabel">How to Use</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Follow these steps to use the Chemical Safety Data Extractor:</p>
+          <ul>
+            <li>Enter one or more chemical names separated by commas in the input field.</li>
+            <li>Click the "Search" button to fetch data about the chemicals.</li>
+            <li>Review the displayed safety risk assessments below.</li>
+            <li>Select the chemicals you are interested in.</li>
+            <li>Click the "Submit" button to process your selection.</li>
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     // Global variables to track selections and search results.
