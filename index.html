@@ -120,6 +120,7 @@
       } else {
         // For exact and partial searches, get the JSON data.
         fetch(url)
+          .then(response => response.json())
           .then(data => {
             let cids = [];
             if (data.IdentifierList && data.IdentifierList.CID) {
