@@ -20,13 +20,6 @@
   </table>
   <button class="btn btn-primary mt-3" onclick="submitSelection()">Submit</button>
   <script>
-      function fetchWithUA(url) {
-          return fetch(url, {
-              headers: {
-                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-              }
-          }).then(response => response.json());
-      }
       
       function cleanText(text) {
           return text.replace(/\[.*?\]|\(.*?\)/g, '').trim();
@@ -37,7 +30,7 @@
               return Promise.resolve(["Not Classified - Treat as Toxic"]);
           }
           const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/${cid}/JSON`;
-          return fetchWithUA(url).then(data => {
+          return fetch(url).then(response => response.json()).then(data => {
               let hazardStatements = [];
               try {
                   const sections = data.Record.Section;
