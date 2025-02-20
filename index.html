@@ -27,14 +27,6 @@
     // For each chemical we store its latest search results, search type, and current page.
     let searchResultsData = {};
 
-    function fetchWithUA(url) {
-      return fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
-      }).then(response => response.json());
-    }
-
     // Called when the user clicks the Search button.
     function searchChemicals() {
       const input = document.getElementById("chemicalsInput").value;
@@ -95,9 +87,9 @@
 
       let url;
       if (matchType === "exact") {
-        url = `/api/exactSearch?chemical=${encodeURIComponent(chemical)}`;
+        url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(chemical)}/cids/JSON`;
       } else if (matchType === "partial") {
-        url = `/api/partialSearch?chemical=${encodeURIComponent(chemical)}`;
+        url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(chemical)}/cids/JSON?name_type=word`;
       } else if (matchType === "general") {
         // Instead of fetching directly (which causes CORS issues), call our serverless endpoint.
         url = `/api/generalSearch?chemical=${encodeURIComponent(chemical)}`;
@@ -174,12 +166,14 @@
         // For exact and partial searches, each result is a CID.
         currentResults.forEach(cid => {
           // Fetch additional properties for each CID.
-          fetchWithUA(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/MolecularFormula/JSON`)
+          fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/MolecularFormula/JSON`)
+            .then(response => response.json())
             .then(data => {
               if (data.PropertyTable && data.PropertyTable.Properties.length > 0) {
                 const properties = data.PropertyTable.Properties[0];
                 const molecularFormula = properties.MolecularFormula || "N/A";
-                fetchWithUA(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/synonyms/JSON`)
+                fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/synonyms/JSON`)
+                  .then(response => response.json())
                   .then(synData => {
                     const synonyms = synData.InformationList?.Information[0]?.Synonym || [];
                     const synonym = Array.isArray(synonyms) && synonyms.length > 0 ? synonyms[0] : "N/A";
