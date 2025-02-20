@@ -3,31 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chemical Safety Data Extractor</title>
+  <title>Chemical Risk Assessment Form Generator</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
   <style>
     .selected { background-color: #d4edda !important; }
-    /* Position the how-to-use button on the top right */
-    .how-to-use-btn {
+    /* Custom modal overlay */
+    .modal-overlay {
+      display: none; /* Hidden by default */
       position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 1050;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      padding: 0;
-      font-size: 20px;
-      line-height: 40px;
-      text-align: center;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    }
+    /* Modal content styling */
+    .modal-content-custom {
+      background-color: #fff;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 700px;
+      border-radius: 5px;
+      position: relative;
+    }
+    /* Close button style */
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
     }
   </style>
 </head>
 <body class="container mt-5">
-  <!-- How to Use Button -->
-  <button type="button" class="btn btn-info how-to-use-btn">
-    ?
-  </button>
+  <!-- Question mark button at top right -->
+  <div class="position-fixed top-0 end-0 p-3">
+    <button id="helpBtn" type="button" class="btn btn-secondary rounded-circle">
+      How to use
+    </button>
+  </div>
 
   <h2 class="mb-4">Chemical Safety Risk Assessment</h2>
   <div class="mb-3">
@@ -39,28 +58,23 @@
   <div class="mt-4" id="resultsContainer"></div>
   <button class="btn btn-success mt-3" onclick="submitSelection()">Submit</button>
 
-  <!-- How to Use Modal -->
-  <div class="modal fade" id="howToUseModal" tabindex="-1" aria-labelledby="howToUseModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="howToUseModalLabel">How to Use</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <p>Follow these steps to use the Chemical Safety Data Extractor:</p>
-          <ul>
-            <li>Enter one or more chemical names separated by commas in the input field.</li>
-            <li>Click the "Search" button to fetch data about the chemicals.</li>
-            <li>Review the displayed safety risk assessments below.</li>
-            <li>Select the chemicals you are interested in.</li>
-            <li>Click the "Submit" button to process your selection.</li>
-          </ul>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        </div>
-      </div>
+  <!-- Custom Modal Structure -->
+  <div id="customModal" class="modal-overlay">
+    <div class="modal-content-custom">
+      <span id="closeModal" class="close-btn">&times;</span>
+      <h4>Instructions</h4>
+      <p>This website generates chemical safety risk assessment (COSHH form) for you.</p>
+      <p>Enter a list of chemical names separated by commas, click "Search" to related information will be fetched from PubChem database.</p>
+      <p>By default, you will be using exact match. This means that the chemical name you enter must match a record in the database exactly.</p>
+      <p>You can change the search type to "Partial Match" or "General Search" using the dropdown.</p>
+      <p>For "Partial Match", it will return records that contains part of the name you entered.</p>
+      <p>For "General Search", it will look up the first page of search result on PubChem Compound. (This may take a while)</p>
+      <p>You need to click on the chemical to select it. You can select multiple chemicals for one you entered.</p>
+      <p>For those you didn't select or no results found, it will be shown as 'Not Classified - Treat as Toxic' in the form.</p>
+      <p>Click "Submit" and related GHS Hazard statements will be fetched.</p>
+      <p>You can choose which hazard statements to include in the final form.</p>
+      <p>The amount used section is optional. You can fill some or none of them.</p>
+      <p>Then click submit to download COSHH form. (You need to fill the disposal and special measures sections yourself)</p>
     </div>
   </div>
 
@@ -70,6 +84,28 @@
     let chemicalMap = {};
     // For each chemical we store its latest search results, search type, and current page.
     let searchResultsData = {};
+
+    // Get the modal element, help button, and close button
+    const modal = document.getElementById('customModal');
+    const helpBtn = document.getElementById('helpBtn');
+    const closeModal = document.getElementById('closeModal');
+
+    // Show the modal when the help button is clicked
+    helpBtn.addEventListener('click', function() {
+      modal.style.display = 'block';
+    });
+
+    // Hide the modal when the close button is clicked
+    closeModal.addEventListener('click', function() {
+      modal.style.display = 'none';
+    });
+
+    // Hide the modal if the user clicks outside the modal content
+    window.addEventListener('click', function(event) {
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
 
     // Called when the user clicks the Search button.
     function searchChemicals() {
