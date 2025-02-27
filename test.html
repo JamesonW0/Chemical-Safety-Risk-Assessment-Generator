@@ -161,7 +161,7 @@
       // Determine URL based on search type (exact or general).
       let searchUrl = type === 'exact'
         ? `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(query)}/cids/JSON`
-        : `/api/generalSearch?chemical=${encodeURIComponent(chemical)}`;
+        : `/api/generalSearch?chemical=${encodeURIComponent(query)}`;
       
       fetch(searchUrl)
         .then(response => response.json())
