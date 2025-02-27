@@ -1,123 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GHS Hazard Data</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Table</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 20px;
+        }
+        h2 {
+            color: #333;
+        }
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .selected {
+            background-color: #007BFF !important;
+            color: white !important;
+        }
+    </style>
 </head>
-<body class="container mt-5">
-  <h2 class="mb-4">GHS Hazard Data</h2>
-  <table class="table table-bordered">
-      <thead>
-          <tr>
-              <th>Chemical Name</th>
-              <th>Amount Used</th>
-              <th>GHS Statements</th>
-          </tr>
-      </thead>
-      <tbody id="ghsTableBody"></tbody>
-  </table>
-  <button class="btn btn-primary mt-3" onclick="submitSelection()">Submit</button>
-  <script>
-      
-      function cleanText(text) {
-          return text.replace(/\[.*?\]|\(.*?\)/g, '').trim();
-      }
-      
-      function getGHSData(cid) {
-          if (cid === '-1') {
-              return Promise.resolve(["Not Classified - Treat as Toxic"]);
-          }
-          const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/${cid}/JSON`;
-          return fetch(url).then(response => response.json()).then(data => {
-              let hazardStatements = [];
-              try {
-                  const sections = data.Record.Section;
-                  const safetySection = sections.find(sec => sec.TOCHeading === 'Safety and Hazards');
-                  if (safetySection) {
-                      const infoSections = safetySection.Section[0]?.Section[0]?.Information || [];
-                      const ghsInfo = infoSections.find(info => info.Name === 'GHS Hazard Statements');
-                      if (ghsInfo) {
-                          hazardStatements = ghsInfo.Value.StringWithMarkup.map(item => cleanText(item.String));
-                      }
-                  }
-              } catch (error) {
-                  console.error("Error parsing GHS data:", error);
-              }
-              return hazardStatements.length > 0 ? hazardStatements : ["Not Classified - Treat as Toxic"];
-          });
-      }
-      
-      function loadGHSData() {
-          const params = new URLSearchParams(window.location.search);
-          const data = JSON.parse(decodeURIComponent(params.get('data')));
-          
-          const tableBody = document.getElementById("ghsTableBody");
-          data.forEach(({ cid, name }) => {
-              getGHSData(cid).then(ghsStatements => {
-                  const row = document.createElement("tr");
-                  row.innerHTML = `
-                      <td>${name}</td>
-                      <td><input type="text" class="form-control" placeholder="Enter amount"></td>
-                      <td>
-                          ${ghsStatements.map(statement => `
-                              <div class="form-check">
-                                  <input class="form-check-input" type="checkbox" checked value="${statement}">
-                                  <label class="form-check-label">${statement}</label>
-                              </div>
-                          `).join('')}
-                      </td>
-                  `;
-                  tableBody.appendChild(row);
-              }).catch(error => console.error("Error fetching GHS data:", error));
-          });
-      }
-      
-      function submitSelection() {
-          const selectedData = [];
-          document.querySelectorAll("#ghsTableBody tr").forEach(row => {
-              const name = row.cells[0].textContent;
-              const amount = row.cells[1].querySelector("input").value;
-              const selectedHazards = Array.from(row.cells[2].querySelectorAll("input:checked"))
-                  .map(input => input.value);
-              selectedData.push({ name, amount, hazards: selectedHazards });
-          });
-          console.log("Selected Data:", selectedData);
-          
-          // Send the selectedData to the Python backend at /api/submitGHSData.
-          fetch('/api/processGHSData', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(selectedData)
-          })
-          .then(response => {
-              if (!response.ok) {
-                  throw new Error("Network response was not ok");
-              }
-              return response.blob();
-          })
-          .then(blob => {
-              // Create a temporary URL for the Blob and trigger a download.
-              const url = window.URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              // Optionally, use a filename provided by the backend or a default name.
-              a.download = "COSHH.docx";
-              document.body.appendChild(a);
-              a.click();
-              a.remove();
-              window.URL.revokeObjectURL(url);
-          })
-          .catch(error => {
-              console.error("Error submitting data:", error);
-              alert("Error submitting data.");
-          });
-      }
-      
-      window.onload = loadGHSData;
-  </script>
+<body>
+    <h2>Dynamic Table</h2>
+    <table id="dataTable" class="table table-bordered">
+        <thead class="table-primary">
+            <tr>
+                <th>Name</th>
+                <th>Search Type</th>
+                <th>PubChem CID</th>
+                <th>Amount Used</th>
+                <th>Hazard</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><input type="text" class="form-control" oninput="checkAndModifyRows(this)"></td>
+                <td>
+                    <button class="btn btn-primary" onclick="searchPubChem(this, 'exact')">Exact</button>
+                    <button class="btn btn-secondary" onclick="searchPubChem(this, 'general')">General</button>
+                </td>
+                <td></td>
+                <td><input type="text" class="form-control"></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <script>
+        function checkAndModifyRows(input) {
+            let table = document.getElementById("dataTable").getElementsByTagName('tbody')[0];
+            let rows = table.getElementsByTagName("tr");
+            let lastRow = rows[rows.length - 1];
+            
+            if (input.value.trim() !== "" && lastRow === input.parentElement.parentElement) {
+                let newRow = table.insertRow();
+                newRow.innerHTML = `
+                    <td><input type="text" class="form-control" oninput="checkAndModifyRows(this)"></td>
+                    <td>
+                        <button class="btn btn-primary" onclick="searchPubChem(this, 'exact')">Exact</button>
+                        <button class="btn btn-secondary" onclick="searchPubChem(this, 'general')">General</button>
+                    </td>
+                    <td></td>
+                    <td><input type="text" class="form-control"></td>
+                    <td></td>
+                `;
+            }
+        }
+
+        function searchPubChem(button, type) {
+            let row = button.parentElement.parentElement;
+            let input = row.cells[0].getElementsByTagName("input")[0];
+            let query = input.value.trim();
+            if (query === "") return;
+            
+            let searchUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${query}/JSON`;
+            
+            fetch(searchUrl)
+                .then(response => response.json())
+                .then(data => {
+                    let compounds = data.PC_Compounds || [];
+                    let cidCell = row.cells[2];
+                    cidCell.innerHTML = "";
+                    if (compounds.length > 0) {
+                        compounds.forEach(compound => {
+                            let cid = compound.id.id.cid;
+                            let name = compound.props.find(p => p.urn.label === "IUPAC Name")?.value.sval || `CID ${cid}`;
+                            let button = document.createElement("button");
+                            button.classList.add("btn", "btn-outline-primary", "m-1");
+                            button.textContent = `${name} (${cid})`;
+                            button.onclick = function() {
+                                highlightSelectedButton(cidCell, button);
+                                fetchHazardData(cid, row);
+                            };
+                            cidCell.appendChild(button);
+                        });
+                    } else {
+                        cidCell.textContent = "Not Found";
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching PubChem data:", error);
+                });
+        }
+
+
+        
+
+        function highlightSelectedButton(cell, selectedButton) {
+            let buttons = cell.getElementsByTagName("button");
+            for (let btn of buttons) {
+                btn.classList.remove("selected");
+            }
+            selectedButton.classList.add("selected");
+        }
+
+        function fetchHazardData(cid, row) {
+            if (cid === "Not Found") return;
+            let hazardUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/safety/JSON`;
+            
+            fetch(hazardUrl)
+                .then(response => response.json())
+                .then(data => {
+                    let hazardInfo = data.SafetySummary ? data.SafetySummary.GHS_Classification : "No Data";
+                    row.cells[4].textContent = hazardInfo;
+                })
+                .catch(error => {
+                    console.error("Error fetching hazard data:", error);
+                });
+        }
+    </script>
 </body>
 </html>
